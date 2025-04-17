@@ -15,52 +15,53 @@
     <!-- Back Button -->
     <button type="button" id="backButton" class="btn btn-outline-secondary mb-3 float-end">Back</button>
 
-
     <form id="addOfficeForm" method="POST" action="{{ isset($office) ? route('office.update', $office->id) : route('office.store') }}">
         @csrf
         @isset($office)
-            @method('PUT')  <!-- Add this for the update method -->
+            @method('PUT')
         @endisset
-    
+
         <!-- Site Dropdown -->
         <div class="mb-3">
             <label for="site_id" class="form-label">Site</label>
             <select name="site_id" id="site_id" class="form-select" required>
                 <option value="">-- Select Site --</option>
                 @foreach($sites as $site)
-                    <option value="{{ $site->id }}" {{ isset($office) && $office->floor->block->site->id == $site->id ? 'selected' : '' }}>{{ $site->site_name }}</option>
+                    <option value="{{ $site->id }}" {{ isset($office) && $office->floor->block->site->id == $site->id ? 'selected' : '' }}>
+                        {{ $site->site_name }}
+                    </option>
                 @endforeach
             </select>
         </div>
-    
+
         <!-- Block Dropdown -->
         <div class="mb-3">
             <label for="block_id" class="form-label">Block</label>
             <select name="block_id" id="block_id" class="form-select" required>
                 <option value="">-- Select Block --</option>
-                @foreach($blocks as $block)
-                    <option value="{{ $block->id }}" {{ isset($office) && $office->floor->block_id == $block->id ? 'selected' : '' }}>{{ $block->block_name }}</option>
-                @endforeach
+                @if(isset($office))
+                    <option value="{{ $office->floor->block->id }}" selected>{{ $office->floor->block->block_name }}</option>
+                @endif
             </select>
         </div>
-    
+
         <!-- Floor Dropdown -->
         <div class="mb-3">
             <label for="floor_id" class="form-label">Floor</label>
             <select name="floor_id" id="floor_id" class="form-select" required>
                 <option value="">-- Select Floor --</option>
-                @foreach($floors as $floor)
-                    <option value="{{ $floor->id }}" {{ isset($office) && $office->floor_id == $floor->id ? 'selected' : '' }}>{{ $floor->floor_name }}</option>
-                @endforeach
+                @if(isset($office))
+                    <option value="{{ $office->floor->id }}" selected>{{ $office->floor->floor_name }}</option>
+                @endif
             </select>
         </div>
-    
+
         <!-- Office Name -->
         <div class="mb-3">
             <label for="office_name" class="form-label">Office Name</label>
             <input type="text" class="form-control" id="office_name" name="office_name" value="{{ old('office_name', isset($office) ? $office->office_name : '') }}" required>
         </div>
-    
+
         <!-- Submit Button -->
         <button type="submit" class="btn btn-primary">{{ isset($office) ? 'Update' : 'Submit' }}</button>
     </form>
@@ -68,11 +69,17 @@
 
 <script>
     $(document).ready(function () {
-        // Load Blocks on Site Change
+        // Back Button
+        $('#backButton').click(function() {
+            window.location.href = "{{ route('office.view') }}";
+        });
+
+        // Load Blocks
         $('#site_id').change(function () {
             let siteId = $(this).val();
             $('#block_id').empty().append('<option value="">-- Select Block --</option>');
             $('#floor_id').empty().append('<option value="">-- Select Floor --</option>');
+
             if (siteId) {
                 $.get('/get-blocks/' + siteId, function (data) {
                     $.each(data.blocks, function (i, block) {
@@ -82,10 +89,11 @@
             }
         });
 
-        // Load Floors on Block Change
+        // Load Floors
         $('#block_id').change(function () {
             let blockId = $(this).val();
             $('#floor_id').empty().append('<option value="">-- Select Floor --</option>');
+
             if (blockId) {
                 $.get('/get-floors/' + blockId, function (data) {
                     $.each(data.floors, function (i, floor) {
@@ -95,48 +103,51 @@
             }
         });
 
-        // Handle Back Button
-        $('#backButton').click(function() {
-            window.history.back();
-        });
-        
+        // Auto Select for Edit
+        @if(isset($office))
+            $('#site_id').trigger('change');
+            setTimeout(function () {
+                $('#block_id').val("{{ $office->floor->block->id }}").trigger('change');
+                setTimeout(function () {
+                    $('#floor_id').val("{{ $office->floor->id }}");
+                }, 500);
+            }, 500);
+        @endif
 
-        // Handle Form Submission via AJAX
+        // AJAX Form Submit
         $('#addOfficeForm').submit(function (e) {
-            e.preventDefault();  // Prevent the default form submission
+            e.preventDefault();
 
-            // Clear previous messages
-            $('#successMessage').hide();
-            $('#errorMessage').hide();
-
-            var formData = $(this).serialize();  // Serialize the form data
-            var actionUrl = $(this).attr('action');  // Get the action URL to determine if it's an update or create
+            let form = $(this);
+            let actionUrl = form.attr('action');
+            let formData = form.serialize();  // includes _method=PUT if present
 
             $.ajax({
                 url: actionUrl,
-                method: 'POST',
+                type: 'POST', // always POST, even for PUT
                 data: formData,
                 success: function (response) {
-                    
-                    var successMessage = actionUrl.includes('update') ? 'Details updated successfully!' : 'Office added successfully!';
-                    
-                    /
-                    $('#successMessage').text(successMessage).show();
-
-                    // Custom success message and redirect
-                    alert(successMessage);
-                    
-            
-                    window.location.href = '{{ route('office.view', ['office' => $office->id ?? 0]) }}';  // Adjust the route as needed
+                    alert('✅ Office ' + (actionUrl.includes('update') ? 'updated' : 'created') + ' successfully!');
+                    window.location.href = "{{ route('office.view') }}";
                 },
-                error: function (xhr, status, error) {
-                   
-                    $('#errorMessage').show();
+                error: function (xhr) {
+                    if (xhr.status === 422) {
+                        let errors = xhr.responseJSON.errors;
+                        let errorMsg = '⚠️ Validation Errors:\n\n';
+                        $.each(errors, function (key, value) {
+                            errorMsg += '- ' + value[0] + '\n';
+                        });
+                        alert(errorMsg);
+                    } else {
+                        alert('❌ Something went wrong. Status: ' + xhr.status);
+                    }
                 }
             });
         });
+
     });
 </script>
+
 
 </body>
 </html>
