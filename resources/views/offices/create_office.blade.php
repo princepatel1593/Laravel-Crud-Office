@@ -127,7 +127,7 @@
                 type: 'POST', // always POST, even for PUT
                 data: formData,
                 success: function (response) {
-                    alert('✅ Office ' + (actionUrl.includes('update') ? 'updated' : 'created') + ' successfully!');
+                    alert(' Office ' + (actionUrl.includes('update') ? 'updated' : 'created') + ' successfully!');
                     window.location.href = "{{ route('office.view') }}";
                 },
                 error: function (xhr) {
