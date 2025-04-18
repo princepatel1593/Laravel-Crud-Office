@@ -133,7 +133,7 @@
                 error: function (xhr) {
                     if (xhr.status === 422) {
                         let errors = xhr.responseJSON.errors;
-                        let errorMsg = '⚠️ Validation Errors:\n\n';
+                        let errorMsg = ' Validation Errors:\n\n';
                         $.each(errors, function (key, value) {
                             errorMsg += '- ' + value[0] + '\n';
                         });
