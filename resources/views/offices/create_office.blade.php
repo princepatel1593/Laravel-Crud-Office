@@ -139,7 +139,7 @@
                         });
                         alert(errorMsg);
                     } else {
-                        alert('❌ Something went wrong. Status: ' + xhr.status);
+                        alert(' Something went wrong. Status: ' + xhr.status);
                     }
                 }
             });

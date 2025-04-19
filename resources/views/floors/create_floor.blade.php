@@ -54,17 +54,21 @@
                 </div>
 
                 <!-- Block Dropdown -->
+              <!-- Block Dropdown -->
                 <div class="mb-3">
                     <label for="block_id" class="form-label">Block</label>
                     <select name="block_id" id="block_id" class="form-select" required>
                         <option value="">-- Select Block --</option>
-                        @foreach ($blocks as $block)
-                            <option value="{{ $block->id }}" {{ (old('block_id', $floor->block_id ?? '') == $block->id) ? 'selected' : '' }}>
-                                {{ $block->block_name }}
-                            </option>
-                        @endforeach
+                        @if(isset($floor))
+                            @foreach ($blocks as $block)
+                                <option value="{{ $block->id }}" {{ (old('block_id', $floor->block_id ?? '') == $block->id) ? 'selected' : '' }}>
+                                    {{ $block->block_name }}
+                                </option>
+                            @endforeach
+                        @endif
                     </select>
                 </div>
+
 
                 <!-- Floor Name -->
                 <div class="mb-3">
