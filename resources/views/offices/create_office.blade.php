@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ isset($office) ? 'Edit Office' : 'Add Office' }}</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -106,13 +107,28 @@
         // Auto Select for Edit
         @if(isset($office))
             $('#site_id').trigger('change');
-            setTimeout(function () {
+
+            // Wait for blocks to load first, then set block and trigger floor load
+            $.get('/get-blocks/' + "{{ $office->floor->block->site->id }}", function (data) {
+                $('#block_id').empty().append('<option value="">-- Select Block --</option>');
+                $.each(data.blocks, function (i, block) {
+                    $('#block_id').append('<option value="' + block.id + '">' + block.block_name + '</option>');
+                });
+
                 $('#block_id').val("{{ $office->floor->block->id }}").trigger('change');
-                setTimeout(function () {
+
+                // Wait for floors to load after block selection
+                $.get('/get-floors/' + "{{ $office->floor->block->id }}", function (data) {
+                    $('#floor_id').empty().append('<option value="">-- Select Floor --</option>');
+                    $.each(data.floors, function (i, floor) {
+                        $('#floor_id').append('<option value="' + floor.id + '">' + floor.floor_name + '</option>');
+                    });
+
                     $('#floor_id').val("{{ $office->floor->id }}");
-                }, 500);
-            }, 500);
+                });
+            });
         @endif
+
 
         // AJAX Form Submit
         $('#addOfficeForm').submit(function (e) {
